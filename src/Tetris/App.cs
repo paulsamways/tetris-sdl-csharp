@@ -70,22 +70,33 @@ public class App : AppBase
     _renderer.DrawColor = _backgroundColor;
     _ = _renderer.TryClear();
 
-    var boardDimensions = GetBoardDimensions();
-    var boardX = (_windowWidth - boardDimensions.Item1) / 2;
-    var boardY = (_windowHeight - boardDimensions.Item2) / 2;
+    var boardSize = GetBoardSize();
 
+    _renderer.Viewport = new Rect<int>(
+      (_windowWidth - boardSize.Width) / 2,
+      (_windowHeight - boardSize.Height) / 2,
+      boardSize.Width,
+      boardSize.Height
+    );
+
+    OnDrawBoard(boardSize.Width, boardSize.Height);
+
+    _renderer.ResetViewport();
+
+    _ = _renderer.TryRenderPresent();
+  }
+
+  private void OnDrawBoard(float width, float height)
+  {
     _ = _renderer.DrawColor = ColorPalette.Foreground;
-    _ = _renderer.TryRenderRect(new Rect<float>(boardX, boardY, boardDimensions.Item1, boardDimensions.Item2));
+    _ = _renderer.TryRenderRect(new Rect<float>(0, 0, width, height));
 
-    var rows = State.Board.GetLength(0);
-    var columns = State.Board.GetLength(1);
+    var tetrominoWidth = width / State.Board.GetLength(1);
+    var tetrominoHeight = height / State.Board.GetLength(0);
 
-    var tetrominoHeight = boardDimensions.Item2 / rows;
-    var tetrominoWidth = boardDimensions.Item1 / columns;
-
-    for (var y = 0; y < rows; y++)
+    for (var y = 0; y < State.Board.GetLength(0); y++)
     {
-      for (var x = 0; x < columns; x++)
+      for (var x = 0; x < State.Board.GetLength(1); x++)
       {
         var tetromino = State.Board[y, x];
         if (tetromino != Tetromino.None)
@@ -93,8 +104,8 @@ public class App : AppBase
           float innerWidth = (float)(tetrominoWidth * .95);
           float margin = (float)(tetrominoWidth * .025);
 
-          var tetrominoX = boardX + (x * tetrominoWidth) + margin;
-          var tetrominoY = boardY + (y * tetrominoHeight) + margin;
+          var tetrominoX = (x * tetrominoWidth) + margin;
+          var tetrominoY = (y * tetrominoHeight) + margin;
 
           _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(tetromino);
           _ = _renderer.TryRenderFilledRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
@@ -110,8 +121,8 @@ public class App : AppBase
       float innerWidth = (float)(tetrominoWidth * .95);
       float margin = (float)(tetrominoWidth * .025);
 
-      var tetrominoX = boardX + ((x + State.CurrentPosition.X) * tetrominoWidth) + margin;
-      var tetrominoY = boardY + ((y + State.CurrentPosition.Y) * tetrominoHeight) + margin;
+      var tetrominoX = ((x + State.CurrentPosition.X) * tetrominoWidth) + margin;
+      var tetrominoY = ((y + State.CurrentPosition.Y) * tetrominoHeight) + margin;
 
       _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(State.CurrentPiece.Tetromino);
       _ = _renderer.TryRenderFilledRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
@@ -119,20 +130,18 @@ public class App : AppBase
       // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(State.CurrentPiece.Tetromino);
       // _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
     }
-
-    _ = _renderer.TryRenderPresent();
   }
 
-  private (float, float) GetBoardDimensions()
+  private Size GetBoardSize()
   {
-    float width = (float)(_windowWidth * .9);
-    float height = (float)(_windowHeight * .9);
-    float halfHeight = height / 2;
+    var width = (int)(_windowWidth * .9);
+    var height = (int)(_windowHeight * .9);
+    var halfHeight = height / 2;
 
     if (width > halfHeight)
-      return (halfHeight, height);
+      return new(halfHeight, height);
 
-    return (width, width * 2);
+    return new(width, width * 2);
   }
 
   protected override AppResult OnEvent(Sdl sdl, ref Event @event)
