@@ -15,9 +15,7 @@ public record struct Piece
     {
       for (int x = 0; x < value.GetLength(1); x++)
       {
-        ushort location = value[y, x];
-
-        if (location != 0)
+        if (value[y, x] != 0)
           yield return (x, y);
       }
     }
@@ -41,8 +39,8 @@ public record struct Piece
     return new() { Tetromino = tetromino, Rotations = rotations };
   }
 
-  public readonly static Piece[] Pieces = new Piece[]
-  {
+  public readonly static Piece[] Pieces =
+  [
       FromArray(Tetromino.None,
         new byte[,] { { 0 } }
       ),
@@ -155,5 +153,5 @@ public record struct Piece
           { 1, 0 },
         }
       ),
-  };
+  ];
 }

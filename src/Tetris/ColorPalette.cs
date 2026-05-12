@@ -31,7 +31,7 @@ public static class ColorPalette
   public static readonly Color<byte> BrightCyan = (86, 182, 194, 1);
   public static readonly Color<byte> BrightWhite = (255, 255, 255, 1);
 
-  public static Color<byte> GetTetrominoColor(Tetromino t) => t switch
+  public static Color<byte> GetTetrominoBackgroundColor(Tetromino t) => t switch
   {
     Tetromino.None => throw new NotImplementedException(),
     Tetromino.I => Cyan,
@@ -41,6 +41,19 @@ public static class ColorPalette
     Tetromino.S => Green,
     Tetromino.T => Magenta,
     Tetromino.Z => Red,
+    _ => throw new NotImplementedException(),
+  };
+
+  public static Color<byte> GetTetrominoBorderColor(Tetromino t) => t switch
+  {
+    Tetromino.None => throw new NotImplementedException(),
+    Tetromino.I => BrightCyan,
+    Tetromino.J => BrightBlue,
+    Tetromino.L => BrightWhite,
+    Tetromino.O => BrightYellow,
+    Tetromino.S => BrightGreen,
+    Tetromino.T => BrightMagenta,
+    Tetromino.Z => BrightRed,
     _ => throw new NotImplementedException(),
   };
 }

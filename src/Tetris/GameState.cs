@@ -17,6 +17,8 @@ public struct GameState
     AdvanceToNextTetromino();
   }
 
+  public int Score { get; private set; }
+
   public Tetromino[,] Board { get; private set; }
 
 
@@ -35,6 +37,71 @@ public struct GameState
   {
     foreach (var (x, y) in CurrentPiece.GetPositions(CurrentRotation))
       Board[CurrentPosition.Y + y, CurrentPosition.X + x] = CurrentPiece.Tetromino;
+  }
+
+  private void ClearRows()
+  {
+    // Use a two-pointer compaction: readRow scans upward from the bottom,
+    // writeRow tracks where the next surviving row should land. Full rows are
+    // skipped by readRow without advancing writeRow, which naturally compacts
+    // surviving rows downward in a single O(rows × columns) pass.
+    var writeRow = Board.GetLength(0) - 1;
+    var clearedRows = 0;
+
+    // Hoisted so its final value is visible after the loop: when the loop breaks
+    // early on an empty row, readRow marks the boundary above which all rows are
+    // already empty and do not need blanking.
+    var readRow = Board.GetLength(0) - 1;
+    for (; readRow >= 0; readRow--)
+    {
+      // Classify the row in one pass: track both full and completely empty.
+      var filledCells = 0;
+      for (var x = 0; x < Board.GetLength(1); x++)
+      {
+        if (Board[readRow, x] != Tetromino.None)
+          filledCells++;
+      }
+
+      if (filledCells == 0)
+      {
+        // Pieces stack from the bottom, so an entirely empty row means every
+        // row above is also empty — nothing left to compact.
+        break;
+      }
+
+      if (filledCells == Board.GetLength(1))
+      {
+        // Skip this row; writeRow stays put so the gap gets overwritten.
+        clearedRows++;
+        continue;
+      }
+
+      // Copy the surviving row down to writeRow only when the pointers diverge.
+      if (writeRow != readRow)
+      {
+        for (var x = 0; x < Board.GetLength(1); x++)
+        {
+          Board[writeRow, x] = Board[readRow, x];
+        }
+      }
+
+      writeRow--;
+    }
+
+    if (clearedRows == 0)
+      return;
+
+    // Blank only the rows between writeRow and readRow: rows at readRow and above
+    // were already empty when we broke out of the loop, so there is no work to do there.
+    for (var y = writeRow; y > readRow; y--)
+    {
+      for (var x = 0; x < Board.GetLength(1); x++)
+      {
+        Board[y, x] = Tetromino.None;
+      }
+    }
+
+    Score += clearedRows;
   }
 
   private void AdvanceToNextTetromino()
@@ -72,9 +139,14 @@ public struct GameState
   public void Reset()
   {
     for (var y = 0; y < Board.GetLength(0); y++)
+    {
       for (var x = 0; x < Board.GetLength(1); x++)
+      {
         Board[y, x] = Tetromino.None;
+      }
+    }
 
+    Score = 0;
     NextTetrominoIndex = int.MaxValue;
 
     AdvanceToNextTetromino();
@@ -86,6 +158,7 @@ public struct GameState
     if (Collision(nextPosition, CurrentRotation))
     {
       LockCurrentTetromino();
+      ClearRows();
       AdvanceToNextTetromino();
     }
     else

@@ -90,30 +90,34 @@ public class App : AppBase
         var tetromino = State.Board[y, x];
         if (tetromino != Tetromino.None)
         {
-          _ = _renderer.DrawColor = ColorPalette.GetTetrominoColor(tetromino);
-
           float innerWidth = (float)(tetrominoWidth * .95);
           float margin = (float)(tetrominoWidth * .025);
 
           var tetrominoX = boardX + (x * tetrominoWidth) + margin;
           var tetrominoY = boardY + (y * tetrominoHeight) + margin;
 
-          _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
+          _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(tetromino);
+          _ = _renderer.TryRenderFilledRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
+
+          // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(tetromino);
+          // _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
         }
       }
     }
 
     foreach (var (x, y) in State.CurrentPiece.GetPositions(State.CurrentRotation))
     {
-      _ = _renderer.DrawColor = ColorPalette.GetTetrominoColor(State.CurrentPiece.Tetromino);
-
       float innerWidth = (float)(tetrominoWidth * .95);
       float margin = (float)(tetrominoWidth * .025);
 
       var tetrominoX = boardX + ((x + State.CurrentPosition.X) * tetrominoWidth) + margin;
       var tetrominoY = boardY + ((y + State.CurrentPosition.Y) * tetrominoHeight) + margin;
 
-      _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
+      _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(State.CurrentPiece.Tetromino);
+      _ = _renderer.TryRenderFilledRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
+
+      // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(State.CurrentPiece.Tetromino);
+      // _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
     }
 
     _ = _renderer.TryRenderPresent();
