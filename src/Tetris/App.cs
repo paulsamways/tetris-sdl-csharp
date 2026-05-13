@@ -130,6 +130,21 @@ public class App : AppBase
       // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(State.CurrentPiece.Tetromino);
       // _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
     }
+
+    foreach (var (x, y) in State.CurrentPiece.GetPositions(State.CurrentRotation))
+    {
+      float innerWidth = (float)(tetrominoWidth * .95);
+      float margin = (float)(tetrominoWidth * .025);
+
+      var tetrominoX = ((x + State.GhostPosition.X) * tetrominoWidth) + margin;
+      var tetrominoY = ((y + State.GhostPosition.Y) * tetrominoHeight) + margin;
+
+      _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(State.CurrentPiece.Tetromino);
+      _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
+
+      // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(State.CurrentPiece.Tetromino);
+      // _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
+    }
   }
 
   private Size GetBoardSize()

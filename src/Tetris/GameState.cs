@@ -26,6 +26,8 @@ public struct GameState
 
   public Point<ushort> CurrentPosition { get; private set; }
 
+  public Point<ushort> GhostPosition { get; private set; }
+
   public byte CurrentRotation { get; private set; }
 
 
@@ -117,8 +119,18 @@ public struct GameState
     CurrentPiece = Piece.Pieces[(int)nextTetromino];
     CurrentPosition = (3, 0);
     CurrentRotation = 0;
+    RecalculateGhostPosition();
   }
 
+  private void RecalculateGhostPosition()
+  {
+    var ghostPosition = CurrentPosition;
+
+    while (!Collision((ghostPosition.X, (ushort)(ghostPosition.Y + 1)), CurrentRotation))
+      ghostPosition = (ghostPosition.X, (ushort)(ghostPosition.Y + 1));
+
+    GhostPosition = ghostPosition;
+  }
 
   private bool Collision(Point<ushort> position, byte rotation)
   {
@@ -134,6 +146,28 @@ public struct GameState
     }
 
     return false;
+  }
+
+  private bool TrySetPosition(Point<ushort>? position = null, byte? rotation = null)
+  {
+    var nextPosition = position ?? CurrentPosition;
+    var nextRotation = rotation ?? CurrentRotation;
+
+    if (Collision(nextPosition, nextRotation))
+      return false;
+
+    var hasHorizontalChange = nextPosition.X != CurrentPosition.X;
+    var hasRotationChange = nextRotation != CurrentRotation;
+
+    CurrentPosition = nextPosition;
+    CurrentRotation = nextRotation;
+
+    // The landing row only depends on board, x and rotation. A pure Y move keeps
+    // ghost landing unchanged, so we can skip recomputation in that hot path.
+    if (hasHorizontalChange || hasRotationChange)
+      RecalculateGhostPosition();
+
+    return true;
   }
 
   public void Reset()
@@ -154,37 +188,20 @@ public struct GameState
 
   public void Step()
   {
-    var nextPosition = new Point<ushort>(CurrentPosition.X, (ushort)(CurrentPosition.Y + 1));
-    if (Collision(nextPosition, CurrentRotation))
+    if (!TrySetPosition((CurrentPosition.X, (ushort)(CurrentPosition.Y + 1))))
     {
       LockCurrentTetromino();
       ClearRows();
       AdvanceToNextTetromino();
     }
-    else
-    {
-      CurrentPosition = nextPosition;
-    }
   }
 
-  public void MoveLeft()
-  {
-    var nextPosition = ((ushort)(CurrentPosition.X - 1), CurrentPosition.Y);
-    if (!Collision(nextPosition, CurrentRotation))
-      CurrentPosition = nextPosition;
-  }
+  public void MoveLeft() =>
+    _ = TrySetPosition(((ushort)(CurrentPosition.X - 1), CurrentPosition.Y));
 
-  public void MoveRight()
-  {
-    var nextPosition = ((ushort)(CurrentPosition.X + 1), CurrentPosition.Y);
-    if (!Collision(nextPosition, CurrentRotation))
-      CurrentPosition = nextPosition;
-  }
+  public void MoveRight() =>
+    _ = TrySetPosition(((ushort)(CurrentPosition.X + 1), CurrentPosition.Y));
 
-  public void Rotate()
-  {
-    var nextRotation = CurrentRotation < 3 ? (byte)(CurrentRotation + 1) : (byte)0;
-    if (!Collision(CurrentPosition, nextRotation))
-      CurrentRotation = nextRotation;
-  }
+  public void Rotate() =>
+    _ = TrySetPosition(rotation: CurrentRotation < 3 ? (byte)(CurrentRotation + 1) : (byte)0);
 }
