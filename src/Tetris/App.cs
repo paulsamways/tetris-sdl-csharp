@@ -198,6 +198,9 @@ public class App : AppBase
         case Keycode.Escape:
           State.Reset();
           break;
+        case Keycode.Space:
+          State.Drop();
+          break;
 
       }
     }

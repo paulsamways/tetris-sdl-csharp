@@ -3,7 +3,7 @@ using Sdl3Sharp.Video.Drawing;
 namespace Tetris;
 
 
-public struct GameState
+public class GameState
 {
   public GameState()
   {
@@ -24,11 +24,11 @@ public struct GameState
 
   public Piece CurrentPiece { get; private set; }
 
-  public Point<ushort> CurrentPosition { get; private set; }
+  public Point<int> CurrentPosition { get; private set; }
 
-  public Point<ushort> GhostPosition { get; private set; }
+  public Point<int> GhostPosition { get; private set; }
 
-  public byte CurrentRotation { get; private set; }
+  public int CurrentRotation { get; private set; }
 
 
   public Tetromino[] TetrominoBag { get; }
@@ -126,13 +126,13 @@ public struct GameState
   {
     var ghostPosition = CurrentPosition;
 
-    while (!Collision((ghostPosition.X, (ushort)(ghostPosition.Y + 1)), CurrentRotation))
-      ghostPosition = (ghostPosition.X, (ushort)(ghostPosition.Y + 1));
+    while (!Collision((ghostPosition.X, ghostPosition.Y + 1), CurrentRotation))
+      ghostPosition = (ghostPosition.X, ghostPosition.Y + 1);
 
     GhostPosition = ghostPosition;
   }
 
-  private bool Collision(Point<ushort> position, byte rotation)
+  private bool Collision(Point<int> position, int rotation)
   {
     // Game board collision
     if (position.X < 0 || position.X + CurrentPiece.GetColumns(rotation) > Board.GetLength(1) || position.Y + CurrentPiece.GetRows(rotation) > Board.GetLength(0))
@@ -148,7 +148,7 @@ public struct GameState
     return false;
   }
 
-  private bool TrySetPosition(Point<ushort>? position = null, byte? rotation = null)
+  private bool TrySetPosition(Point<int>? position = null, int? rotation = null)
   {
     var nextPosition = position ?? CurrentPosition;
     var nextRotation = rotation ?? CurrentRotation;
@@ -170,6 +170,13 @@ public struct GameState
     return true;
   }
 
+  private void LockClearAndAdvance()
+  {
+    LockCurrentTetromino();
+    ClearRows();
+    AdvanceToNextTetromino();
+  }
+
   public void Reset()
   {
     for (var y = 0; y < Board.GetLength(0); y++)
@@ -188,20 +195,22 @@ public struct GameState
 
   public void Step()
   {
-    if (!TrySetPosition((CurrentPosition.X, (ushort)(CurrentPosition.Y + 1))))
-    {
-      LockCurrentTetromino();
-      ClearRows();
-      AdvanceToNextTetromino();
-    }
+    if (!TrySetPosition((CurrentPosition.X, CurrentPosition.Y + 1)))
+      LockClearAndAdvance();
   }
 
   public void MoveLeft() =>
-    _ = TrySetPosition(((ushort)(CurrentPosition.X - 1), CurrentPosition.Y));
+    _ = TrySetPosition((CurrentPosition.X - 1, CurrentPosition.Y));
 
   public void MoveRight() =>
-    _ = TrySetPosition(((ushort)(CurrentPosition.X + 1), CurrentPosition.Y));
+    _ = TrySetPosition((CurrentPosition.X + 1, CurrentPosition.Y));
 
   public void Rotate() =>
-    _ = TrySetPosition(rotation: CurrentRotation < 3 ? (byte)(CurrentRotation + 1) : (byte)0);
+    _ = TrySetPosition(rotation: CurrentRotation < 3 ? CurrentRotation + 1 : 0);
+
+  public void Drop()
+  {
+    _ = TrySetPosition(GhostPosition);
+    LockClearAndAdvance();
+  }
 }

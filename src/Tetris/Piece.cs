@@ -7,7 +7,7 @@ public record struct Piece
   public required Tetromino Tetromino { get; init; }
   public required byte[][,] Rotations { get; init; }
 
-  public IEnumerable<Point<int>> GetPositions(byte rotation)
+  public IEnumerable<Point<int>> GetPositions(int rotation)
   {
     var value = Rotations[rotation];
 
@@ -21,9 +21,9 @@ public record struct Piece
     }
   }
 
-  public int GetRows(byte rotation) => Rotations[rotation].GetLength(0);
+  public int GetRows(int rotation) => Rotations[rotation].GetLength(0);
 
-  public int GetColumns(byte rotation) => Rotations[rotation].GetLength(1);
+  public int GetColumns(int rotation) => Rotations[rotation].GetLength(1);
 
 
   public static Piece FromArray(Tetromino tetromino, params byte[][,] rotations)
