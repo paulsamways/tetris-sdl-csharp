@@ -58,7 +58,7 @@ public class App : AppBase
   protected virtual void OnUpdate(ulong deltaTicks, float deltaSeconds)
   {
     _counter += deltaTicks;
-    if (_counter > (Sdl3Sharp.Timing.Time.NanosecondsPerSecond / 3))
+    if (_counter > (Sdl3Sharp.Timing.Time.NanosecondsPerSecond / 2))
     {
       _counter = 0;
       if (!_paused)

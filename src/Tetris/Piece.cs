@@ -4,8 +4,27 @@ namespace Tetris;
 
 public record struct Piece
 {
+  private readonly static Point<int>[][] _clockwiseKicksJlstz =
+  [
+    [ (0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2) ],
+    [ (0, 0), (1, 0), (1, 1), (0, -2), (1, -2) ],
+    [ (0, 0), (1, 0), (1, -1), (0, 2), (1, 2) ],
+    [ (0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2) ],
+  ];
+
+  private readonly static Point<int>[][] _clockwiseKicksI =
+  [
+    [ (0, 0), (-2, 0), (1, 0), (-2, 1), (1, -2) ],
+    [ (0, 0), (-1, 0), (2, 0), (-1, -2), (2, 1) ],
+    [ (0, 0), (2, 0), (-1, 0), (2, -1), (-1, 2) ],
+    [ (0, 0), (1, 0), (-2, 0), (1, 2), (-2, -1) ],
+  ];
+
+  private readonly static Point<int>[][] _clockwiseKicksO = [[(0, 0)], [(0, 0)], [(0, 0)], [(0, 0)]];
+
   public required Tetromino Tetromino { get; init; }
   public required byte[][,] Rotations { get; init; }
+  public required Point<int>[][] ClockwiseKickTests { get; init; }
 
   public IEnumerable<Point<int>> GetPositions(int rotation)
   {
@@ -25,133 +44,103 @@ public record struct Piece
 
   public int GetColumns(int rotation) => Rotations[rotation].GetLength(1);
 
-
-  public static Piece FromArray(Tetromino tetromino, params byte[][,] rotations)
-  {
-    if (rotations.Length == 1)
-      rotations = [rotations[0], rotations[0], rotations[0], rotations[0]];
-    else if (rotations.Length == 2)
-      rotations = [rotations[0], rotations[1], rotations[0], rotations[1]];
-    else if (rotations.Length != 4)
-      throw new ArgumentException("Must provide either a single rotation, two rotations or four rotations");
-
-
-    return new() { Tetromino = tetromino, Rotations = rotations };
-  }
-
   public readonly static Piece[] Pieces =
   [
-      FromArray(Tetromino.None,
-        new byte[,] { { 0 } }
-      ),
-      FromArray(Tetromino.I,
-        new byte[,] {{1, 1, 1, 1}},
-        new byte[,] {{1}, {1}, {1}, {1}}
-      ),
-      FromArray(Tetromino.J,
-        new byte[,]
-        {
-          { 0, 1 },
-          { 0, 1 },
-          { 1, 1 },
-        },
-        new byte[,]
-        {
-          { 1, 0, 0 },
-          { 1, 1, 1 },
-        },
-        new byte[,]
-        {
-          { 1, 1 },
-          { 1, 0 },
-          { 1, 0 },
-        },
-        new byte[,]
-        {
-          { 1, 1, 1 },
-          { 0, 0, 1 },
-        }
-      ),
-      FromArray(Tetromino.L,
-        new byte[,]
-        {
-          { 1, 0 },
-          { 1, 0 },
-          { 1, 1 },
-        },
-        new byte[,]
-        {
-          { 1, 1, 1 },
-          { 1, 0, 0 },
-        },
-        new byte[,]
-        {
-          { 1, 1 },
-          { 0, 1 },
-          { 0, 1 },
-        },
-        new byte[,]
-        {
-          { 0, 0, 1 },
-          { 1, 1, 1 },
-        }
-      ),
-      FromArray(Tetromino.O,
-        new byte[,]
-        {
-          { 1, 1 },
-          { 1, 1 }
-        }
-      ),
-      FromArray(Tetromino.S,
-        new byte[,]
-        {
-          { 0, 1, 1 },
-          { 1, 1, 0 },
-        },
-        new byte[,]
-        {
-          { 1, 0 },
-          { 1, 1 },
-          { 0, 1 },
-        }
-      ),
-      FromArray(Tetromino.T,
-        new byte[,]
-        {
-          { 0, 1, 0 },
-          { 1, 1, 1 },
-        },
-        new byte[,]
-        {
-          { 1, 0 },
-          { 1, 1 },
-          { 1, 0 },
-        },
-        new byte[,]
-        {
-          { 1, 1, 1 },
-          { 0, 1, 0 },
-        },
-        new byte[,]
-        {
-          { 0, 1 },
-          { 1, 1 },
-          { 0, 1 },
-        }
-      ),
-      FromArray(Tetromino.Z,
-        new byte[,]
-        {
-          { 1, 1, 0 },
-          { 0, 1, 1 },
-        },
-        new byte[,]
-        {
-          { 0, 1 },
-          { 1, 1 },
-          { 1, 0 },
-        }
-      ),
+      new()
+      {
+        Tetromino = Tetromino.None,
+        ClockwiseKickTests = _clockwiseKicksO,
+        Rotations =
+        [
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.I,
+        ClockwiseKickTests = _clockwiseKicksI,
+        Rotations =
+        [
+          new byte[,] { { 0, 0, 0, 0 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 1, 0 }, { 0, 0, 1, 0 }, { 0, 0, 1, 0 }, { 0, 0, 1, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 1, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.J,
+        ClockwiseKickTests = _clockwiseKicksJlstz,
+        Rotations =
+        [
+          new byte[,] { { 1, 0, 0, 0 }, { 1, 1, 1, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 1, 0 }, { 0, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 0, 1, 0, 0 }, { 1, 1, 0, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.L,
+        ClockwiseKickTests = _clockwiseKicksJlstz,
+        Rotations =
+        [
+          new byte[,] { { 0, 0, 1, 0 }, { 1, 1, 1, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 }, { 1, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 1, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.O,
+        ClockwiseKickTests = _clockwiseKicksO,
+        Rotations =
+        [
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.S,
+        ClockwiseKickTests = _clockwiseKicksJlstz,
+        Rotations =
+        [
+          new byte[,] { { 0, 1, 1, 0 }, { 1, 1, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 0, 1, 1, 0 }, { 0, 0, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 1, 1, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 1, 0, 0, 0 }, { 1, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.T,
+        ClockwiseKickTests = _clockwiseKicksJlstz,
+        Rotations =
+        [
+          new byte[,] { { 0, 1, 0, 0 }, { 1, 1, 1, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 0, 1, 1, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 1, 1, 1, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 1, 1, 0, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
+      new()
+      {
+        Tetromino = Tetromino.Z,
+        ClockwiseKickTests = _clockwiseKicksJlstz,
+        Rotations =
+        [
+          new byte[,] { { 1, 1, 0, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 1, 0 }, { 0, 1, 1, 0 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 0, 0, 0 }, { 1, 1, 0, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 } },
+          new byte[,] { { 0, 1, 0, 0 }, { 1, 1, 0, 0 }, { 1, 0, 0, 0 }, { 0, 0, 0, 0 } },
+        ]
+      },
   ];
 }

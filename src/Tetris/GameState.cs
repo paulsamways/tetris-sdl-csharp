@@ -134,14 +134,20 @@ public class GameState
 
   private bool Collision(Point<int> position, int rotation)
   {
-    // Game board collision
-    if (position.X < 0 || position.X + CurrentPiece.GetColumns(rotation) > Board.GetLength(1) || position.Y + CurrentPiece.GetRows(rotation) > Board.GetLength(0))
-      return true;
+    var boardHeight = Board.GetLength(0);
+    var boardWidth = Board.GetLength(1);
 
-    // Tetromino collision
+    // Check only occupied cells so padded 4x4 rotation matrices do not create
+    // false collisions near walls.
     foreach (var (x, y) in CurrentPiece.GetPositions(rotation))
     {
-      if (Board[position.Y + y, position.X + x] != Tetromino.None)
+      var boardX = position.X + x;
+      var boardY = position.Y + y;
+
+      if (boardX < 0 || boardX >= boardWidth || boardY < 0 || boardY >= boardHeight)
+        return true;
+
+      if (Board[boardY, boardX] != Tetromino.None)
         return true;
     }
 
@@ -206,7 +212,19 @@ public class GameState
     _ = TrySetPosition((CurrentPosition.X + 1, CurrentPosition.Y));
 
   public void Rotate() =>
-    _ = TrySetPosition(rotation: CurrentRotation < 3 ? CurrentRotation + 1 : 0);
+    TryRotateWithWallKicks();
+
+  private void TryRotateWithWallKicks()
+  {
+    var nextRotation = CurrentRotation < 3 ? CurrentRotation + 1 : 0;
+    var kickTests = CurrentPiece.ClockwiseKickTests[CurrentRotation];
+
+    foreach (var (x, y) in kickTests)
+    {
+      if (TrySetPosition((CurrentPosition.X + x, CurrentPosition.Y + y), nextRotation))
+        return;
+    }
+  }
 
   public void Drop()
   {
