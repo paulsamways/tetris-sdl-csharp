@@ -35,6 +35,24 @@ public class GameState
 
   public int NextTetrominoIndex { get; private set; }
 
+  public Tetromino[] GetUpcomingTetrominoes(int count)
+  {
+    if (count <= 0)
+      return [];
+
+    var available = TetrominoBag.Length - NextTetrominoIndex;
+    if (available <= 0)
+      return [];
+
+    var length = Math.Min(count, available);
+    var upcoming = new Tetromino[length];
+
+    for (var i = 0; i < length; i++)
+      upcoming[i] = TetrominoBag[NextTetrominoIndex + i];
+
+    return upcoming;
+  }
+
   private void LockCurrentTetromino()
   {
     foreach (var (x, y) in CurrentPiece.GetPositions(CurrentRotation))
