@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using Sdl3Sharp;
@@ -23,7 +22,7 @@ public class App : AppBase
 
   private bool _paused = false;
 
-  private GameState State = new();
+  private readonly GameState _state = new();
 
   protected override AppResult OnInitialize(Sdl sdl, string[] args)
   {
@@ -63,7 +62,7 @@ public class App : AppBase
     {
       _counter = 0;
       if (!_paused)
-        State.Step();
+        _state.Step();
     }
   }
   protected virtual void OnDraw()
@@ -71,11 +70,8 @@ public class App : AppBase
     _renderer.DrawColor = _backgroundColor;
     _ = _renderer.TryClear();
 
-    var c = (_counter > (Sdl3Sharp.Timing.Time.NanosecondsPerSecond / 4)) ? "TETRIS" : "TTTTT";
-    OnDrawString(c, 100, 10, 20, 30, 2, new Color<float>(1, 0, 0, 0.7f), Justify.Left);
-
     var boardSize = GetBoardSize();
-    var boardCellSize = boardSize.Width / (float)State.Board.GetLength(1);
+    var boardCellSize = boardSize.Width / (float)_state.Board.GetLength(1);
     var previewGap = (int)MathF.Max(12, boardCellSize * .6f);
     var previewWidth = (int)MathF.Max(120, boardCellSize * 5.5f);
 
@@ -97,15 +93,31 @@ public class App : AppBase
 
     _renderer.ResetViewport();
 
-    OnDrawUpcomingPieces(
+    OnDrawScore(
       boardX + boardSize.Width + previewGap,
       boardY,
       previewWidth,
-      boardSize.Height,
+      boardSize.Height / 10,
+      _state.Score
+    );
+
+    OnDrawUpcomingPieces(
+      boardX + boardSize.Width + previewGap,
+      boardY + ((boardSize.Height / 10) * 2),
+      previewWidth,
+      (boardSize.Height / 10) * 8,
       5
     );
 
     _ = _renderer.TryRenderPresent();
+  }
+
+  private void OnDrawScore(int x, int y, int width, int height, int score)
+  {
+    _renderer.DrawColor = ColorPalette.Foreground;
+    _ = _renderer.TryRenderRect(new Rect<float>(x, y, width, height));
+
+    OnDrawString(string.Format("{0:d5}", score), x + 10, y + 10, (width - 30) / 5, height - 20, 2f, new Color<float>(.8f, .1f, .1f, 1f), Justify.Left);
   }
 
   private void OnDrawUpcomingPieces(int x, int y, int width, int height, int count)
@@ -116,7 +128,7 @@ public class App : AppBase
     _renderer.DrawColor = ColorPalette.White;
     _ = _renderer.TryRenderDebugText(x + 8, y + 8, "Next");
 
-    var upcoming = State.GetUpcomingTetrominoes(count);
+    var upcoming = _state.GetUpcomingTetrominoes(count);
     if (upcoming.Length == 0)
       return;
 
@@ -159,11 +171,11 @@ public class App : AppBase
       var x2 = justify == Justify.Left
         ? x + (i * (charWidth + charSpacing))
         : x - ((i + 1) * charWidth) + (i * charSpacing);
-      OnDrawChar(s[i], x2, y, charWidth, charHeight, charSpacing / 3, color);
+      OnDrawChar(s[i], x2, y, charWidth, charHeight, color);
     }
   }
 
-  private void OnDrawChar(char c, float x, float y, float width, float height, float gap, Color<float> color)
+  private void OnDrawChar(char c, float x, float y, float width, float height, Color<float> color)
   {
     var w = width / 3;
     var h = height / 7;
@@ -182,61 +194,61 @@ public class App : AppBase
 
       if (flip)
       {
-        if ((data & 1) == 1)
+        if ((data & 4) == 4)
         {
-          points.Add(new (new(x1, y2), color, new(0, 0)));
-          points.Add(new (new(x1, y1), color, new(0, 0)));
-          points.Add(new (new(x2, y2), color, new(0, 0)));
+          points.Add(new(new(x1, y2), color, new(0, 0)));
+          points.Add(new(new(x1, y1), color, new(0, 0)));
+          points.Add(new(new(x2, y2), color, new(0, 0)));
         }
 
         if ((data & 2) == 2)
         {
-          points.Add(new (new(x2, y2), color, new(0, 0)));
-          points.Add(new (new(x1, y1), color, new(0, 0)));
-          points.Add(new (new(x3, y1), color, new(0, 0)));
+          points.Add(new(new(x2, y2), color, new(0, 0)));
+          points.Add(new(new(x1, y1), color, new(0, 0)));
+          points.Add(new(new(x3, y1), color, new(0, 0)));
         }
 
-        if ((data & 4) == 4)
+        if ((data & 1) == 1)
         {
-          points.Add(new (new(x2, y2), color, new(0, 0)));
-          points.Add(new (new(x3, y1), color, new(0, 0)));
-          points.Add(new (new(x3, y2), color, new(0, 0)));
+          points.Add(new(new(x2, y2), color, new(0, 0)));
+          points.Add(new(new(x3, y1), color, new(0, 0)));
+          points.Add(new(new(x3, y2), color, new(0, 0)));
         }
       }
       else
       {
-        if ((data & 1) == 1)
+        if ((data & 4) == 4)
         {
-          points.Add(new (new(x1, y1), color, new(0, 0)));
-          points.Add(new (new(x1, y2), color, new(0, 0)));
-          points.Add(new (new(x2, y1), color, new(0, 0)));
+          points.Add(new(new(x1, y1), color, new(0, 0)));
+          points.Add(new(new(x1, y2), color, new(0, 0)));
+          points.Add(new(new(x2, y1), color, new(0, 0)));
         }
 
         if ((data & 2) == 2)
         {
-          points.Add(new (new(x2, y1), color, new(0, 0)));
-          points.Add(new (new(x1, y2), color, new(0, 0)));
-          points.Add(new (new(x3, y2), color, new(0, 0)));
+          points.Add(new(new(x2, y1), color, new(0, 0)));
+          points.Add(new(new(x1, y2), color, new(0, 0)));
+          points.Add(new(new(x3, y2), color, new(0, 0)));
         }
 
-        if ((data & 4) == 4)
+        if ((data & 1) == 1)
         {
-          points.Add(new (new(x2, y1), color, new(0, 0)));
-          points.Add(new (new(x3, y2), color, new(0, 0)));
-          points.Add(new (new(x3, y1), color, new(0, 0)));
+          points.Add(new(new(x2, y1), color, new(0, 0)));
+          points.Add(new(new(x3, y2), color, new(0, 0)));
+          points.Add(new(new(x3, y1), color, new(0, 0)));
         }
       }
 
       _ = _renderer.TryRenderGeometry(CollectionsMarshal.AsSpan(points));
     }
 
-    var data = CharTable[c];
+    var data = Tri63CharTable[c];
 
     for (var row = 0; row < 7; row++)
     {
       for (var column = 0; column < 3; column++)
       {
-        var cell = ((3 * row) + column) * 3;
+        var cell = 60 - ((3 * row) + column) * 3;
 
         var flip = row == 2 || row == 4 || row == 6;
 
@@ -245,14 +257,51 @@ public class App : AppBase
     }
   }
 
-  private static Dictionary<char, ulong> CharTable = new()
+  public static readonly Dictionary<char, ulong> Tri63CharTable = new()
   {
-    { 'D', 0 },
-    { 'E', 0b__111_111_111__000_000_111__000_000_111__000_111_111__000_000_111__000_000_111__111_111_111 },
+    // Digits
+    { '0', 0b__011_111_110__111_000_111__111_000_111__111_000_111__111_000_111__111_000_111__011_111_110 },
+    { '1', 0b__011_111_000__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000 },
+    { '2', 0b__011_111_110__111_000_111__000_001_110__000_011_100__001_110_000__011_100_000__111_111_111 },
+    { '3', 0b__011_111_110__111_000_111__000_001_110__000_001_110__000_000_111__010_000_111__011_111_110 },
+    { '4', 0b__011_000_111__111_000_111__111_000_111__111_111_111__000_000_111__000_000_111__000_000_111 },
+    { '5', 0b__011_111_110__111_000_000__111_000_000__111_111_110__000_000_111__000_000_111__011_111_110 },
+    { '6', 0b__011_111_110__111_000_000__111_100_000__111_111_110__111_000_111__111_000_111__011_111_110 },
+    { '7', 0b__111_111_111__000_000_111__000_001_110__000_011_100__001_110_000__011_100_000__111_000_000 },
+    { '8', 0b__011_111_110__111_000_111__011_000_110__011_111_110__111_000_111__111_000_111__011_111_110 },
+    { '9', 0b__011_111_110__111_000_111__011_100_111__001_111_111__000_000_111__000_000_111__011_111_110 },
+
+    { 'A', 0b__011_111_110__111_000_111__111_000_111__111_111_111__111_000_111__111_000_111__111_000_111 },
+    { 'B', 0b__111_111_110__111_000_111__111_000_110__111_111_110__111_000_111__111_000_111__111_111_110 },
+    { 'C', 0b__011_111_110__111_000_111__111_000_000__111_000_000__111_000_000__111_000_010__011_111_110 },
+    { 'D', 0b__111_111_110__111_000_111__111_000_111__111_000_111__111_000_111__111_000_111__111_111_110 },
+    { 'E', 0b__111_111_111__111_000_000__111_000_000__111_111_000__111_000_000__111_000_000__111_111_111 },
+    { 'F', 0b__111_111_111__111_000_000__111_000_000__111_111_000__111_000_000__111_000_000__111_000_000 },
+    { 'G', 0b__011_111_110__111_000_111__111_000_000__111_001_110__111_000_111__111_000_111__011_111_110 },
+    { 'H', 0b__111_000_111__111_000_111__111_000_111__111_111_111__111_000_111__111_000_111__111_000_111 },
     { 'I', 0b__111_111_111__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000__111_111_111 },
-    { 'R', 0b__111_000_111__011_100_111__001_110_111__001_111_111__011_100_111__111_000_111__011_111_111 },
-    { 'S', 0b__011_111_111__111_000_000__111_000_000__011_111_100__000_001_110__000_000_111__111_111_110 },
-    { 'T', 0b__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000__111_111_111 },
+    { 'J', 0b__000_000_111__000_000_111__000_000_111__000_000_111__000_000_111__000_000_111__111_111_110 },
+    { 'K', 0b__111_000_111__111_000_111__111_001_110__111_011_100__111_011_100__111_001_110__111_000_111 },
+    { 'L', 0b__111_000_000__111_000_000__111_000_000__111_000_000__111_000_000__111_000_000__111_111_111 },
+    { 'M', 0b__111_000_111__111_000_111__111_101_111__111_111_111__111_010_111__111_000_111__111_000_111 },
+    { 'N', 0b__111_000_111__111_000_111__111_100_111__111_110_111__111_011_111__111_001_111__111_000_111 },
+    { 'O', 0b__011_111_110__111_000_111__111_000_111__111_000_111__111_000_111__111_000_111__011_111_110 },
+    { 'P', 0b__111_111_110__111_000_111__111_001_110__111_111_100__111_000_000__111_000_000__111_000_000 },
+    { 'Q', 0b__011_111_110__111_000_111__111_000_111__111_000_111__111_001_110__111_011_100__011_110_001 },
+    { 'R', 0b__111_111_110__111_000_111__111_001_110__111_111_100__111_011_100__111_001_110__111_000_111 },
+    { 'S', 0b__011_111_111__111_000_000__011_100_000__001_111_110__000_000_111__000_000_111__111_111_110 },
+    { 'T', 0b__111_111_111__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000 },
+    { 'U', 0b__111_000_111__111_000_111__111_000_111__111_000_111__111_000_111__111_000_111__011_111_110 },
+    { 'V', 0b__111_000_111__111_000_111__111_000_111__111_000_111__111_001_110__111_011_100__111_110_000 },
+    { 'W', 0b__111_000_111__111_000_111__111_000_111__111_010_111__111_111_111__111_101_111__111_000_111 },
+    { 'X', 0b__111_000_111__111_000_111__011_101_110__001_111_100__001_111_100__011_101_110__111_000_111 },
+    { 'Y', 0b__111_000_111__111_000_111__011_100_111__001_110_111__000_011_111__000_001_111__000_000_111 },
+    { 'Z', 0b__111_111_111__000_000_111__000_001_110__000_011_100__001_110_000__011_100_000__111_111_111 },
+
+    { ':', 0b__000_000_000__000_000_000__000_111_000__000_000_000__000_000_000__000_111_000__000_000_000 },
+    { '!', 0b__000_111_000__000_111_000__000_111_000__000_111_000__000_111_000__000_000_000__000_111_000 },
+    { '-', 0b__000_000_000__000_000_000__000_000_000__111_111_111__000_000_000__000_000_000__000_000_000 },
+    { '_', 0b__000_000_000__000_000_000__000_000_000__000_000_000__000_000_000__000_000_000__111_111_111 },
   };
 
   private void OnDrawBoard(float width, float height)
@@ -260,14 +309,14 @@ public class App : AppBase
     _ = _renderer.DrawColor = ColorPalette.Foreground;
     _ = _renderer.TryRenderRect(new Rect<float>(0, 0, width, height));
 
-    var tetrominoWidth = width / State.Board.GetLength(1);
-    var tetrominoHeight = height / State.Board.GetLength(0);
+    var tetrominoWidth = width / _state.Board.GetLength(1);
+    var tetrominoHeight = height / _state.Board.GetLength(0);
 
-    for (var y = 0; y < State.Board.GetLength(0); y++)
+    for (var y = 0; y < _state.Board.GetLength(0); y++)
     {
-      for (var x = 0; x < State.Board.GetLength(1); x++)
+      for (var x = 0; x < _state.Board.GetLength(1); x++)
       {
-        var tetromino = State.Board[y, x];
+        var tetromino = _state.Board[y, x];
         if (tetromino != Tetromino.None)
         {
           float innerWidth = (float)(tetrominoWidth * .95);
@@ -285,30 +334,30 @@ public class App : AppBase
       }
     }
 
-    foreach (var (x, y) in State.CurrentPiece.GetPositions(State.CurrentRotation))
+    foreach (var (x, y) in _state.CurrentPiece.GetPositions(_state.CurrentRotation))
     {
       float innerWidth = (float)(tetrominoWidth * .95);
       float margin = (float)(tetrominoWidth * .025);
 
-      var tetrominoX = ((x + State.CurrentPosition.X) * tetrominoWidth) + margin;
-      var tetrominoY = ((y + State.CurrentPosition.Y) * tetrominoHeight) + margin;
+      var tetrominoX = ((x + _state.CurrentPosition.X) * tetrominoWidth) + margin;
+      var tetrominoY = ((y + _state.CurrentPosition.Y) * tetrominoHeight) + margin;
 
-      _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(State.CurrentPiece.Tetromino);
+      _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(_state.CurrentPiece.Tetromino);
       _ = _renderer.TryRenderFilledRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
 
       // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(State.CurrentPiece.Tetromino);
       // _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
     }
 
-    foreach (var (x, y) in State.CurrentPiece.GetPositions(State.CurrentRotation))
+    foreach (var (x, y) in _state.CurrentPiece.GetPositions(_state.CurrentRotation))
     {
       float innerWidth = (float)(tetrominoWidth * .95);
       float margin = (float)(tetrominoWidth * .025);
 
-      var tetrominoX = ((x + State.GhostPosition.X) * tetrominoWidth) + margin;
-      var tetrominoY = ((y + State.GhostPosition.Y) * tetrominoHeight) + margin;
+      var tetrominoX = ((x + _state.GhostPosition.X) * tetrominoWidth) + margin;
+      var tetrominoY = ((y + _state.GhostPosition.Y) * tetrominoHeight) + margin;
 
-      _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(State.CurrentPiece.Tetromino);
+      _ = _renderer.DrawColor = ColorPalette.GetTetrominoBackgroundColor(_state.CurrentPiece.Tetromino);
       _ = _renderer.TryRenderRect(new Rect<float>(tetrominoX, tetrominoY, innerWidth, innerWidth));
 
       // _ = _renderer.DrawColor = ColorPalette.GetTetrominoBorderColor(State.CurrentPiece.Tetromino);
@@ -353,22 +402,22 @@ public class App : AppBase
       switch (key)
       {
         case Keycode.Left:
-          State.MoveLeft();
+          _state.MoveLeft();
           break;
         case Keycode.Right:
-          State.MoveRight();
+          _state.MoveRight();
           break;
         case Keycode.Down:
-          State.Step();
+          _state.Step();
           break;
         case Keycode.Up:
-          State.Rotate();
+          _state.Rotate();
           break;
         case Keycode.Escape:
-          State.Reset();
+          _state.Reset();
           break;
         case Keycode.Space:
-          State.Drop();
+          _state.Drop();
           break;
 
       }

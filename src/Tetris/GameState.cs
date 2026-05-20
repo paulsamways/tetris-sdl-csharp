@@ -1,3 +1,4 @@
+using System.Collections;
 using Sdl3Sharp.Video.Drawing;
 
 namespace Tetris;
@@ -121,7 +122,13 @@ public class GameState
       }
     }
 
-    Score += clearedRows;
+    Score += clearedRows switch
+    {
+      1 => 40,
+      2 => 100,
+      3 => 300,
+      _ => 1200
+    };
   }
 
   private void AdvanceToNextTetromino()
